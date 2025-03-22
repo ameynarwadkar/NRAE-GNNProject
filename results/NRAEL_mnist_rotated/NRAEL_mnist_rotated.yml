@@ -40,7 +40,7 @@ model:
     - 512
     out_activation: linear
   kernel:
-    lambda: 0.1
+    lambda: 10
     type: binary
   x_dim: 784
   z_dim: 1

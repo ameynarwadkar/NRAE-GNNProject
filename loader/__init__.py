@@ -2,6 +2,7 @@ from torch.utils import data
 
 from loader.synthetic_dataset import SyntheticData
 from loader.MNIST_dataset import RotatedShiftedMNIST
+from loader.FashionMNIST_dataset import RotatedShiftedFashionMNIST
 
 def get_dataloader(data_dict, **kwargs):
     dataset = get_dataset(data_dict)
@@ -17,6 +18,8 @@ def get_dataset(data_dict):
     name = data_dict["dataset"]
     if name == 'synthetic':
         dataset = SyntheticData(**data_dict)
+    elif name == 'fashion':
+        dataset = RotatedShiftedFashionMNIST(**data_dict)    
     elif name == 'mnist':
         dataset = RotatedShiftedMNIST(**data_dict)
     return dataset

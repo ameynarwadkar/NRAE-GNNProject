@@ -1,0 +1,24 @@
+train:
+  epochs: 20
+  batch_size: 64
+  lr: 0.001
+
+dataset:
+  root: "./data"
+  type: "shift"
+  digit: 0
+  download: true
+  num_rotate: 50      # not used for shift
+  rotate_range: 180   # not used for shift
+  shift_range: 10
+
+graph:
+  use_graph: true
+  num_nn: 5
+  bs_nn: 3
+  include_center: true
+  replace: false
+
+model:
+  approach: "NRAEQ"    # Quadratic version
+  latent_dim: 64

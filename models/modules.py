@@ -87,7 +87,7 @@ class FC_image(nn.Module):
             x = x.view(-1, self.in_chan)
             out = self.net(x)
         else:
-            dim = np.int(np.sqrt(self.out_chan / self.out_chan_num))
+            dim = int(np.sqrt(self.out_chan / self.out_chan_num))
             out = self.net(x)
             out = out.reshape(-1, self.out_chan_num, dim, dim)
         return out

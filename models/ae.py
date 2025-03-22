@@ -53,7 +53,11 @@ class AE(nn.Module):
         min_ = encoded.min().item()
         max_ = encoded.max().item()
 
-        z_data = torch.tensor(np.linspace(min_,max_, 10000), dtype=torch.float32).to(device).unsqueeze(1)
+        z_data = torch.linspace(min_, max_, 10000).to(device)
+        if encoded.shape[1] > 1:
+            z_data = torch.stack([z_data, torch.zeros_like(z_data)], dim=1)  # e.g., [10000, 2]
+        else:
+            z_data = z_data.unsqueeze(1)
         gen_data = self.decoder(z_data).detach().cpu()
         recon_data = self.decoder(self.encoder(training_data.to(device))).detach().cpu()
         f = plt.figure()
@@ -79,38 +83,35 @@ class AE(nn.Module):
         def make_frame(img):
             _, h, w = img.size()
             for c_ in range(3):
-                if c_ == 0:
-                    color = 1
-                else:
-                    color = 0
+                color = 1 if c_ == 0 else 0
                 img[c_, 0, :] = color
                 img[c_, h-1, :] = color
                 img[c_, :, 0] = color
                 img[c_, :, w-1] = color
             return img
+
         vis_data = []
         for i, idx in enumerate(range(0, len(data), len(data) // n_vis_step)):
             if i >= n_vis_step:
                 break
             vis_data.append(data[idx])
         vis_data = torch.stack(vis_data, dim=0)
+        
         encoded = self.encoder(vis_data.to(device))
-        _ , index_order = torch.sort(encoded.view(-1), 0)
+        _, index_order = torch.sort(encoded.view(-1), 0)
         ascending_ordered_z = encoded[index_order]
         recon_data = self.decoder(ascending_ordered_z).detach().cpu().repeat(1,3,1,1)
         total_vis_num = recon_data.size(0)
+        
         f = plt.figure(figsize=(16,2))
-        if isinstance(self, NRAE):
-            if self.approx_order == 1:
-                title_ = f'{type(self).__name__}L'
-            else:
-                title_ = f'{type(self).__name__}Q'
-        else: 
+        if hasattr(self, 'approx_order'):
+            title_ = f'{type(self).__name__}L' if self.approx_order == 1 else f'{type(self).__name__}Q'
+        else:
             title_ = f'{type(self).__name__}'
         plt.suptitle(title_, x=0.51, y=1.)
         
         for i in range(total_vis_num):
-            plt.subplot(2,total_vis_num,i+1)
+            plt.subplot(2, total_vis_num, i+1)
             plt.axis('off')
         plt.subplot(212)
         plt.axis('off')
@@ -118,30 +119,35 @@ class AE(nn.Module):
         start = -0.5
         end = 0.5
         dis = (end - start) / total_vis_num 
-        x = np.linspace(-0.5,0.5,total_vis_num)
+        x = np.linspace(-0.5, 0.5, total_vis_num)
         y = 0*x
         plt.plot(x, y, color='0.9', linewidth=3)
         plt.text(.0, -0.05, 'Generated Images (top) by travelling the 1D Latent Space (bottom)', ha='center')
+        
         images = []
         for i in range(total_vis_num):
             for j in range(total_vis_num):
                 if j < i:
                     plt.subplot(212)
                     plt.plot(start + j * dis + dis / 2, 0, 'ko', markersize=10)
-                    plt.subplot(2,total_vis_num,j+1)
+                    plt.subplot(2, total_vis_num, j+1)
                     plt.imshow(recon_data[j].permute(1,2,0))
                 elif j == i:
                     plt.subplot(212)
                     plt.plot(start + j * dis + dis / 2, 0, 'ro', markersize=10)
-                    plt.subplot(2,total_vis_num,j+1)
+                    plt.subplot(2, total_vis_num, j+1)
                     plt.imshow(make_frame(recon_data[j].clone()).permute(1,2,0))
                 else:
-                    plt.subplot(2,total_vis_num,j+1)
+                    plt.subplot(2, total_vis_num, j+1)
                     plt.imshow(torch.ones(3,28,28).permute(1,2,0))
             f.canvas.draw()
-            images.append(np.array(f.canvas.renderer._renderer))
-
+            img = np.frombuffer(f.canvas.tostring_rgb(), dtype=np.uint8)
+            img = img.reshape(f.canvas.get_width_height()[::-1] + (3,))
+            images.append(img)
+        
         imageio.mimsave(sname, images, duration=0.8)
+        print(f"Visualization saved as {sname}")
+
 
 class NRAE(AE):
     def __init__(self, encoder, decoder, approx_order=1, kernel=None):
@@ -213,7 +219,11 @@ class NRAE(AE):
         min_ = encoded.min().item()
         max_ = encoded.max().item()
 
-        z_data = torch.tensor(np.linspace(min_, max_, 10000), dtype=torch.float32).to(device).unsqueeze(1)
+        z_data = torch.linspace(min_, max_, 10000).to(device)
+        if encoded.shape[1] > 1:
+            z_data = torch.stack([z_data, torch.zeros_like(z_data)], dim=1)  # e.g., [10000, 2]
+        else:
+            z_data = z_data.unsqueeze(1)
         gen_data = self.decoder(z_data).detach().cpu()
         recon_data = self.decoder(self.encoder(training_data.to(device))).detach().cpu()
         f = plt.figure()
@@ -257,6 +267,62 @@ class NRAE(AE):
         plt.title(f'epoch: {epoch}, training_loss: {training_loss:.4f}')
         plt.xlim(-4, 4)
         plt.ylim(-1.5, 1.5)
+        f.canvas.draw()
+        f_arr = np.array(f.canvas.renderer._renderer)
+        plt.close()
+        return f_arr
+
+    def image_manifold_visualize(self, epoch, training_loss, training_data, labels, device, title="Latent Manifold (Image Data)"):
+        """
+        Visualize the latent space (assumed 2D) for image data.
+        Rather than using raw pixel data, we use the encoded latent vectors.
+        Also plots a latent sweep (a line along z₁ with z₂ fixed at the mean) and, if available, shows neighborhood connections.
+        """
+        self.eval()
+        with torch.no_grad():
+            # Get latent codes: shape [N, 2]
+            encoded = self.encoder(training_data.to(device)).cpu()  
+            # For the latent sweep, we sweep along z₁ while holding z₂ constant (using its mean)
+            z1_min = encoded[:, 0].min().item()
+            z1_max = encoded[:, 0].max().item()
+            z1 = torch.linspace(z1_min, z1_max, 10000).to(device)
+            z2 = torch.full_like(z1, encoded[:, 1].mean())
+            z_data = torch.stack([z1, z2], dim=1)
+        
+        f = plt.figure(figsize=(10, 6))
+        plt.title(f'{title}\nepoch: {epoch}, training_loss: {training_loss:.4f}')
+        
+        # Plot the latent codes (scatter)
+        plt.scatter(encoded[:, 0], encoded[:, 1], s=30, c='b', label='Latent points')
+        
+        # Plot the latent sweep curve
+        plt.plot(z_data[:, 0].cpu().numpy(), z_data[:, 1].cpu().numpy(), linewidth=3, c='tab:orange', label='Latent sweep')
+        
+        # Optionally, if your dataset stores nearest-neighbor indices (self.dist_indices),
+        # draw lines between selected points and their neighbors in latent space.
+        if hasattr(self, 'dist_indices'):
+            plotted_local = False
+            for idx_of_interest in [int(0.2 * len(encoded)), int(0.7 * len(encoded))]:
+                # Get the central latent point
+                x_c = encoded[idx_of_interest:idx_of_interest+1]  # shape [1,2]
+                # Get neighbor indices (assumed to be stored in self.dist_indices)
+                neighbors_idx = self.dist_indices[idx_of_interest]
+                # If the neighbor indices are a list or array, get the neighbor latent codes
+                if isinstance(neighbors_idx, (list, np.ndarray)):
+                    x_nn = encoded[neighbors_idx]
+                    for i in range(x_nn.shape[0]):
+                        plt.plot([x_c[0, 0].item(), x_nn[i, 0].item()],
+                                [x_c[0, 1].item(), x_nn[i, 1].item()],
+                                '--', c='tab:green', alpha=0.5)
+                    # Mark the central point
+                    plt.scatter(x_c[0, 0].item(), x_c[0, 1].item(), c='tab:green', s=50, marker='x',
+                                label='Selected latent point' if not plotted_local else None)
+                    plotted_local = True
+
+        plt.xlabel("z₁")
+        plt.ylabel("z₂")
+        plt.legend(loc='upper left')
+        plt.grid(True)
         f.canvas.draw()
         f_arr = np.array(f.canvas.renderer._renderer)
         plt.close()
