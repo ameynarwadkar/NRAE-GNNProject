@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import math
+from sklearn.datasets import make_moons
 
 class SyntheticData(data.Dataset):
     def __init__(self, split='training', type='sincurve', num_data=50, noise_level=0.0, graph=False, **kwargs):
@@ -31,8 +32,21 @@ class SyntheticData(data.Dataset):
                 [torch.tensor([r_*np.cos(theta_), 0.6*r_*np.sin(theta_)]).view(1, 2) for r_, theta_ in zip(r, theta)]
                 , dim=0).to(torch.float32)
             data = data + noise_level*torch.randn(num_data, 2)
-        return data
-    
+        elif type == 'twomoons':
+                data, _ = make_moons(n_samples=num_data, noise=noise_level)
+                data = torch.tensor(data, dtype=torch.float32)
+        elif type == 'spiral':
+                theta = np.linspace(0, 2*np.pi, num_data)
+                r = theta
+                x = r * np.cos(theta) + np.random.normal(0, noise_level, size=theta.shape)
+                y = r * np.sin(theta) + np.random.normal(0, noise_level, size=theta.shape)
+                data = np.vstack([x, y]).T
+                data = torch.tensor(data, dtype=torch.float32)
+        else:
+                raise ValueError(f"Unknown synthetic dataset type: {type}")
+            
+        return data  
+      
     def set_graph(self):
         data_temp = self.data.view(len(self.data), -1).clone()
         dist_mat = torch.cdist(data_temp, data_temp)
@@ -42,7 +56,7 @@ class SyntheticData(data.Dataset):
     def visualize_data(self, training_data, test_data):
         f = plt.figure()
         plt.scatter(training_data[:, 0], training_data[:, 1], s=50, label='training data')
-        plt.plot( test_data[:, 0], test_data[:, 1], linewidth=5 , c='k', label='data manifold')
+        # plt.plot( test_data[:, 0], test_data[:, 1], linewidth=5 , c='k', label='data manifold')
         plt.title('Training Data and Ground Truth Data Manifold')
         plt.legend(loc='upper left')
         plt.xlim(-4, 4)
@@ -55,7 +69,7 @@ class SyntheticData(data.Dataset):
     def visualize_graph(self, training_data, test_data, dist_mat_indices):
         f = plt.figure()
         plt.scatter(training_data[:, 0], training_data[:, 1], s=50, label='training data')
-        plt.plot(test_data[:, 0], test_data[:, 1], linewidth=5 , c='k', label='data manifold')
+        # plt.plot(test_data[:, 0], test_data[:, 1], linewidth=5 , c='k', label='data manifold')
         for i in range(len(training_data)):
             temp = dist_mat_indices[i]
             for j in range(len(temp)):

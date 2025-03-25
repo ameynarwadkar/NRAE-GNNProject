@@ -22,6 +22,30 @@ def standardize_frame(frame, size=(480, 640)):
     img = img.resize(size)
     return np.array(img)
 
+def plot_loss_curves(epochs, train_losses, test_losses, logdir, model_name):
+    """
+    Plots and saves training and testing loss curves over epochs.
+    
+    Parameters:
+        epochs (array-like): Epoch indices.
+        train_losses (array-like): Training loss per epoch.
+        test_losses (array-like): Testing loss per epoch.
+        logdir (str): Directory to save the figure.
+        model_name (str): Name of the model (e.g., "AE" or "NRAE").
+    """
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, train_losses, label=f"{model_name} Training Loss", marker='o')
+    plt.plot(epochs, test_losses, label=f"{model_name} Testing Loss", marker='s')
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title(f"Training and Testing Loss vs Epochs ({model_name})")
+    plt.legend()
+    plt.grid(True)
+    loss_fig_path = os.path.join(logdir, f"{model_name}_loss_curves.png")
+    plt.savefig(loss_fig_path)
+    plt.show()
+    print(f"Loss curves saved to: {loss_fig_path}")
+
 def run(cfg):
     # Setup seeds
     seed = cfg.get("seed", 1)
@@ -43,54 +67,22 @@ def run(cfg):
 
     # Setup Model
     model = get_model(cfg['model']).to(device)
+    model_name = cfg['model']['arch'].upper()
     if cfg["data"]["training"].get("graph", False):
         model.dist_indices = d_datasets['training'].dist_mat_indices
-
-    # Latent visualization before training
-    try:
-        training_data_fig = None
-        if "image" in cfg["model"]["encoder"]["arch"]:
-            training_data_fig = model.image_manifold_visualize(
-                epoch=0,
-                training_loss=0.0,
-                training_data=d_datasets['training'].data,
-                labels=getattr(d_datasets['training'], "labels", None),
-                device=device,
-                title="Initial Latent Space"
-            )
-        else:
-            training_data_fig = model.synthetic_visualize(
-                0,
-                0.0,
-                d_datasets['training'].data,
-                d_datasets['test'].data,
-                device
-            )
-    except Exception as e:
-        print("Skipping initial visualization due to:", e)
-        training_data_fig = None
-
-    # Graph visualization
-    graph_fig = None
-    if hasattr(d_datasets['training'], 'visualize_graph'):
-        try:
-            graph_fig = d_datasets['training'].visualize_graph(
-                d_datasets['training'].data,
-                d_datasets['test'].data,
-                d_datasets['training'].dist_mat_indices,
-                model=model,
-                device=device
-            )
-        except Exception as e:
-            print("Skipping graph visualization:", e)
 
     # Setup optimizer and scheduler
     params = {k: v for k, v in cfg['optimizer'].items() if k != "name"}
     optimizer = torch.optim.Adam(model.parameters(), **params)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.9)
 
-    list_of_images = []
-    for epoch in range(cfg['training']['num_epochs']):
+    # Lists to record loss per epoch
+    all_train_losses = []
+    all_test_losses = []
+
+    num_epochs = cfg['training']['num_epochs']
+    for epoch in range(num_epochs):
+        model.train()
         training_loss = []
         if cfg["data"]["training"].get("graph", False):
             for x, x_nn in d_dataloaders['training']:
@@ -100,63 +92,38 @@ def run(cfg):
             for x in d_dataloaders['training']:
                 train_dict = model.train_step(x.to(device), optimizer)
                 training_loss.append(train_dict["loss"])
+        avg_train_loss = sum(training_loss) / len(training_loss)
+        all_train_losses.append(avg_train_loss)
+        print(f"Epoch: {epoch}, Training Loss: {avg_train_loss:.4f}")
 
-        print(f"n_epoch: {epoch}, training_loss: {sum(training_loss)/len(training_loss)}")
+        # Compute test loss
+        model.eval()
+        test_loss = []
+        with torch.no_grad():
+            for x in d_dataloaders['test']:
+                if hasattr(model, "test_step"):
+                    out_dict = model.test_step(x.to(device))
+                    loss = out_dict["loss"]
+                else:
+                    out = model(x.to(device))
+                    if isinstance(out, dict):
+                    # Here you may need to adjust the loss computation to match your model’s output.
+                        loss = out_dict.get("loss", 0.0)
+                    else:
+                        loss = out
+                    if torch.is_tensor(loss):
+                        loss = loss.mean().item()
+                test_loss.append(loss)
+        avg_test_loss = sum(test_loss) / len(test_loss) if len(test_loss) > 0 else 0.0
+        all_test_losses.append(avg_test_loss)
+        print(f"Epoch: {epoch}, Testing Loss: {avg_test_loss:.4f}")
 
-        if epoch > 0.8 * cfg['training']['num_epochs']:
+        if epoch > 0.8 * num_epochs:
             scheduler.step()
 
-        if (epoch % 40 == 0) or (epoch < 30):
-            try:
-                if "image" in cfg["model"]["encoder"]["arch"]:
-                    image_array = model.image_manifold_visualize(
-                        epoch,
-                        sum(training_loss)/len(training_loss),
-                        d_datasets['training'].data,
-                        getattr(d_datasets['training'], "labels", None),
-                        device=device,
-                        title=f"Latent Manifold (Epoch {epoch})"
-                    )
-                else:
-                    image_array = model.synthetic_visualize(
-                        epoch,
-                        sum(training_loss)/len(training_loss),
-                        d_datasets['training'].data,
-                        d_datasets['test'].data,
-                        device
-                    )
-                list_of_images.append(image_array)
-            except Exception as e:
-                print(f"Skipping visualization at epoch {epoch} due to:", e)
-
-    # Convert Images to GIF
-    f = plt.figure()
-    model_name = cfg['model']['arch'].upper()
-    plt.text(0.5, 0.5, f'{model_name} Training', size=24, ha='center', va='center')
-    plt.axis('off')
-    f.canvas.draw()
-    f_arr = np.array(f.canvas.renderer._renderer)
-    plt.close()
-
-    list_figs = [f_arr]*10
-    if training_data_fig is not None:
-        list_figs += [training_data_fig]*10
-    if graph_fig is not None:
-        list_figs += [graph_fig]*10
-    list_figs += list_of_images + [list_of_images[-1]]*20
-
-    for i, img in enumerate(list_figs):
-        print(f"Frame {i} shape: {img.shape}")
-
-    standard_size = (480, 640)  # or any consistent resolution
-
-    standardized_figs = [standardize_frame(f, size=standard_size) for f in list_figs]
-
-    imageio.mimsave(
-        os.path.join(cfg['logdir'], f'{model_name}_training.gif'),
-        standardized_figs,
-        duration=1.0
-    )
+    # Plot and save loss curves
+    epochs = np.arange(1, num_epochs + 1)
+    plot_loss_curves(epochs, all_train_losses, all_test_losses, cfg['logdir'], model_name)
 
 def parse_arg_type(val):
     if val.isnumeric():

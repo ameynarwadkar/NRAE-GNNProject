@@ -3,6 +3,11 @@ data:
     batch_size: 50
     dataset: mnist
     digit: 3
+    graph:
+      bs_nn: 2
+      include_center: true
+      num_nn: 10
+      replace: false
     num_rotate: 100
     root: ./dataset
     rotate_range: 180

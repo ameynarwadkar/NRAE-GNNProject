@@ -40,7 +40,7 @@ class AE(nn.Module):
         loss = ((recon - x) ** 2).view(len(x), -1).mean(dim=1).mean()
         return {"loss": loss.item()}
 
-    def train_step(self, x, optimizer, **kwargs):
+    def train_step(self, x, x_nn, optimizer, **kwargs):
         optimizer.zero_grad()
         recon = self(x)
         loss = ((recon - x) ** 2).view(len(x), -1).mean(dim=1).mean()
@@ -61,7 +61,7 @@ class AE(nn.Module):
         gen_data = self.decoder(z_data).detach().cpu()
         recon_data = self.decoder(self.encoder(training_data.to(device))).detach().cpu()
         f = plt.figure()
-        plt.plot(test_data[:, 0], test_data[:, 1], '--', linewidth=5 , c='k', label='data manifold')
+        # plt.plot(test_data[:, 0], test_data[:, 1], '--', linewidth=5 , c='k', label='data manifold')
         plt.plot(gen_data[:, 0], gen_data[:, 1], linewidth=5, c='tab:orange', label='learned manifold')
         for i in range(len(training_data)):
             line_arg = [(training_data[i][0], recon_data[i][0]), (training_data[i][1], recon_data[i][1]), '--']
@@ -227,7 +227,7 @@ class NRAE(AE):
         gen_data = self.decoder(z_data).detach().cpu()
         recon_data = self.decoder(self.encoder(training_data.to(device))).detach().cpu()
         f = plt.figure()
-        plt.plot(test_data[:, 0], test_data[:, 1], '--', linewidth=5 , c='k', label='data manifold')
+        # plt.plot(test_data[:, 0], test_data[:, 1], '--', linewidth=5 , c='k', label='data manifold')
         plt.plot(gen_data[:, 0], gen_data[:, 1], linewidth=5, c='tab:orange', label='learned manifold')
         plt.scatter(training_data[:, 0], training_data[:, 1], s=50, label='training data')
         for i in range(len(training_data)):
@@ -275,14 +275,14 @@ class NRAE(AE):
     def image_manifold_visualize(self, epoch, training_loss, training_data, labels, device, title="Latent Manifold (Image Data)"):
         """
         Visualize the latent space (assumed 2D) for image data.
-        Rather than using raw pixel data, we use the encoded latent vectors.
-        Also plots a latent sweep (a line along z₁ with z₂ fixed at the mean) and, if available, shows neighborhood connections.
+        Plots the latent codes, a latent sweep, and—for three different neighbor parameters—
+        draws lines connecting selected latent points with their nearest neighbors.
         """
         self.eval()
         with torch.no_grad():
             # Get latent codes: shape [N, 2]
             encoded = self.encoder(training_data.to(device)).cpu()  
-            # For the latent sweep, we sweep along z₁ while holding z₂ constant (using its mean)
+            # For the latent sweep, sweep along z₁ while holding z₂ constant (using its mean)
             z1_min = encoded[:, 0].min().item()
             z1_max = encoded[:, 0].max().item()
             z1 = torch.linspace(z1_min, z1_max, 10000).to(device)
@@ -292,33 +292,35 @@ class NRAE(AE):
         f = plt.figure(figsize=(10, 6))
         plt.title(f'{title}\nepoch: {epoch}, training_loss: {training_loss:.4f}')
         
-        # Plot the latent codes (scatter)
+        # Plot latent codes (scatter)
         plt.scatter(encoded[:, 0], encoded[:, 1], s=30, c='b', label='Latent points')
         
         # Plot the latent sweep curve
         plt.plot(z_data[:, 0].cpu().numpy(), z_data[:, 1].cpu().numpy(), linewidth=3, c='tab:orange', label='Latent sweep')
         
-        # Optionally, if your dataset stores nearest-neighbor indices (self.dist_indices),
-        # draw lines between selected points and their neighbors in latent space.
+        # If neighbor indices exist, plot connections using 3 different neighbor parameters:
         if hasattr(self, 'dist_indices'):
-            plotted_local = False
+            # Define three different neighbor counts to test:
+            neighbor_params = [2, 4, 6]  # Adjust these values as needed
+            colors = ['tab:green', 'tab:purple', 'tab:cyan']  # Different colors for each setting
+            
+            # Choose two indices in the latent space to demonstrate local neighborhood structure
             for idx_of_interest in [int(0.2 * len(encoded)), int(0.7 * len(encoded))]:
-                # Get the central latent point
-                x_c = encoded[idx_of_interest:idx_of_interest+1]  # shape [1,2]
-                # Get neighbor indices (assumed to be stored in self.dist_indices)
-                neighbors_idx = self.dist_indices[idx_of_interest]
-                # If the neighbor indices are a list or array, get the neighbor latent codes
-                if isinstance(neighbors_idx, (list, np.ndarray)):
+                x_c = encoded[idx_of_interest:idx_of_interest+1]  # central latent point, shape [1,2]
+                for np_idx, num in enumerate(neighbor_params):
+                    # Use the first 'num' neighbors from the stored dist_indices for this point.
+                    # (Ensure that self.dist_indices[idx_of_interest] has at least 'num' entries.)
+                    neighbors_idx = self.dist_indices[idx_of_interest][:num]
                     x_nn = encoded[neighbors_idx]
+                    # Draw lines connecting the central point to each neighbor for this parameter setting.
                     for i in range(x_nn.shape[0]):
                         plt.plot([x_c[0, 0].item(), x_nn[i, 0].item()],
-                                [x_c[0, 1].item(), x_nn[i, 1].item()],
-                                '--', c='tab:green', alpha=0.5)
-                    # Mark the central point
-                    plt.scatter(x_c[0, 0].item(), x_c[0, 1].item(), c='tab:green', s=50, marker='x',
-                                label='Selected latent point' if not plotted_local else None)
-                    plotted_local = True
-
+                                 [x_c[0, 1].item(), x_nn[i, 1].item()],
+                                 '--', c=colors[np_idx], alpha=0.5,
+                                 label=f'{num} neighbors' if (i == 0 and idx_of_interest == int(0.2*len(encoded))) else None)
+                    # Mark the central point in the same color
+                    plt.scatter(x_c[0, 0].item(), x_c[0, 1].item(), c=colors[np_idx], s=50, marker='x')
+        
         plt.xlabel("z₁")
         plt.ylabel("z₂")
         plt.legend(loc='upper left')
@@ -327,3 +329,4 @@ class NRAE(AE):
         f_arr = np.array(f.canvas.renderer._renderer)
         plt.close()
         return f_arr
+        

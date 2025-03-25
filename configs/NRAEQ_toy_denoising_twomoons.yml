@@ -1,42 +1,42 @@
-exp_name: NRAEL_toy_denoising
+exp_name: NRAEQ_toy_denoising_twomoons
 data:
   training:
     split: training
     dataset: synthetic
-    type: sincurve
-    num_data: 50
-    noise_level: 0.3
-    batch_size: 32
+    type: twomoons
+    num_data: 30
+    noise_level: 0.05
+    batch_size: 16
     graph: 
       include_center: False
       replace: True
-      num_nn: 10
+      num_nn: 2
       bs_nn: 2
   test:
     split: test
     dataset: synthetic
-    type: sincurve
+    type: twomoons
     num_data: 1000
     noise_level: 0.0
     batch_size: 32
 model:
-  arch: nrael
+  arch: nraeq
   encoder:
       arch: fc_vec
-      l_hidden: [512, 512, 512, ]
-      activation: ['elu', 'elu', 'elu', ]
+      l_hidden: [512, 512, 512]
+      activation: ['elu', 'elu', 'elu' ]
       out_activation: 'linear'
   decoder:
       arch: fc_vec
-      l_hidden: [512, 512, 512, ]
-      activation: ['elu', 'elu', 'elu', ]
+      l_hidden: [512, 512, 512]
+      activation: ['elu', 'elu', 'elu']
       out_activation: 'linear'
   x_dim: 2
   z_dim: 1
   kernel: 
     type: 'binary'
-    lambda: 100
+    lambda: 2
 optimizer:
   lr: 0.001
 training:
-  num_epochs: 501
+  num_epochs: 1001

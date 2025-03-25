@@ -7,20 +7,28 @@ data:
     shift_range: 10
     digit: 3
     batch_size: 10
+    graph: 
+        include_center: True
+        replace: False
+        num_nn: 2
+        bs_nn: 2
 model:
   arch: ae
   encoder:
       arch: fc_image
-      l_hidden: [512, 512, 512, ]
-      activation: ['relu', 'relu', 'relu', ]
+      l_hidden: [512, 512, 512]
+      activation: ['relu', 'relu', 'relu' ]
       out_activation: 'linear'
   decoder:
       arch: fc_image
-      l_hidden: [512, 512, 512, ]
-      activation: ['relu', 'relu', 'relu', ]
+      l_hidden: [512, 512, 512]
+      activation: ['relu', 'relu', 'relu' ]
       out_activation: 'sigmoid'
   x_dim: 784
   z_dim: 1
+  kernel: 
+    type: 'binary'
+    lambda: 100
 optimizer:
   lr: 0.001
 training:

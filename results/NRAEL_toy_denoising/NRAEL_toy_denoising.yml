@@ -53,4 +53,4 @@ model:
 optimizer:
   lr: 0.001
 training:
-  num_epochs: 2001
+  num_epochs: 501

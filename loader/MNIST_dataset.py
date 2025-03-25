@@ -7,13 +7,33 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torchvision import transforms
-from torchvision.datasets.mnist import MNIST
+from torchvision.datasets import MNIST as TorchMNIST
 
-class RotatedShiftedMNIST(MNIST):
+TorchMNIST.resources = [
+    (
+        "https://storage.googleapis.com/cvdf-datasets/mnist/train-images-idx3-ubyte.gz",
+        "f68b3c2dcbeaaa9fbdd348bbdeb94873"
+    ),
+    (
+        "https://storage.googleapis.com/cvdf-datasets/mnist/train-labels-idx1-ubyte.gz",
+        "d53e105ee54ea40749a09fcbcd1e9432"
+    ),
+    (
+        "https://storage.googleapis.com/cvdf-datasets/mnist/t10k-images-idx3-ubyte.gz",
+        "9fb629c4189551a2d022fa330f9573f3"
+    ),
+    (
+        "https://storage.googleapis.com/cvdf-datasets/mnist/t10k-labels-idx1-ubyte.gz",
+        "ec29112dd5afa0611ce80d1b7f02629c"
+    )
+]
+
+class RotatedShiftedMNIST(TorchMNIST):
     '''Select a single digit in MNIST then make a rotated or shifted dataset.
     '''
     def __init__(self,
         root,
+        train=True,
         type='rotate',
         digit=0,
         graph=False,
@@ -23,7 +43,8 @@ class RotatedShiftedMNIST(MNIST):
         assert type in ["rotate", "shift"]
 
         super(RotatedShiftedMNIST, self).__init__(
-            root,
+            root=root,
+            train=train,
             download=download,
         )
 

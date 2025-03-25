@@ -8,6 +8,11 @@ data:
     rotate_range: 180
     digit: 3
     batch_size: 50
+    graph: 
+          include_center: True
+          replace: False
+          num_nn: 10
+          bs_nn: 2
 model:
   arch: ae
   encoder:

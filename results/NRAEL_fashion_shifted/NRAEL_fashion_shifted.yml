@@ -1,22 +1,33 @@
 data:
-  training:
+  test:
     batch_size: 50
-    dataset: mnist
-    digit: 3
-    graph:
-      bs_nn: 2
-      include_center: true
-      num_nn: 15
-      replace: false
-    num_rotate: 100
+    dataset: fashion
+    digit: 0
+    download: true
+    num_rotate: 50
     root: ./dataset
     rotate_range: 180
+    shift_range: 10
     type: rotate
+  training:
+    batch_size: 10
+    dataset: fashion
+    digit: 3
+    download: true
+    graph:
+      bs_nn: 3
+      include_center: true
+      num_nn: 5
+      replace: false
+      use_graph: true
+    root: ./dataset
+    shift_range: 10
+    type: shift
 device: cuda:0
-exp_name: NRAEQ_mnist_rotated
-logdir: results/NRAEQ_mnist_rotated
+exp_name: NRAEL_fashion_shifted
+logdir: results/NRAEL_fashion_shifted
 model:
-  arch: nraeq
+  arch: nrael
   decoder:
     activation:
     - relu
@@ -43,7 +54,7 @@ model:
     lambda: 10
     type: binary
   x_dim: 784
-  z_dim: 1
+  z_dim: 2
 optimizer:
   lr: 0.001
 training:

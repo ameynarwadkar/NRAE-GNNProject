@@ -1,4 +1,4 @@
-exp_name: NRAEQ_fashion_shifted
+exp_name: NRAEL_fashion_shifted
 data:
   training:
     dataset: fashion

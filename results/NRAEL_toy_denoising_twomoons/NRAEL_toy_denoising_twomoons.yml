@@ -5,24 +5,24 @@ data:
     noise_level: 0.0
     num_data: 1000
     split: test
-    type: sincurve
+    type: twomoons
   training:
-    batch_size: 32
+    batch_size: 16
     dataset: synthetic
     graph:
       bs_nn: 2
-      include_center: false
-      num_nn: 10
+      include_center: true
+      num_nn: 2
       replace: true
-    noise_level: 0.3
-    num_data: 50
+    noise_level: 0.05
+    num_data: 30
     split: training
-    type: sincurve
+    type: twomoons
 device: cuda:0
-exp_name: NRAEQ_toy_denoising
-logdir: results/NRAEQ_toy_denoising
+exp_name: NRAEL_toy_denoising_twomoons
+logdir: results/NRAEL_toy_denoising_twomoons
 model:
-  arch: nraeq
+  arch: nrael
   decoder:
     activation:
     - elu
@@ -46,7 +46,7 @@ model:
     - 512
     out_activation: linear
   kernel:
-    lambda: 100
+    lambda: 2
     type: binary
   x_dim: 2
   z_dim: 1
