@@ -1,7 +1,7 @@
-exp_name: NRAEL_fashion_shifted
+exp_name: AE_cifar_shifted
 data:
   training:
-    dataset: fashion
+    dataset: cifar10
     root: ./dataset
     type: shift
     digit: 3
@@ -15,15 +15,15 @@ data:
       include_center: true
       replace: false
   test:
-    dataset: fashion
+    dataset: cifar10
     root: ./dataset
-    type: rotate
-    digit: 0
+    type: shift
+    digit: 3
     download: true
     shift_range: 10
     batch_size: 50
 model:
-  arch: nrael
+  arch: ae
   encoder:
       arch: fc_image
       l_hidden: [512, 512, 512, ]

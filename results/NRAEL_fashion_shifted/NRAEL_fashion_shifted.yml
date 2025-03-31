@@ -4,9 +4,7 @@ data:
     dataset: fashion
     digit: 0
     download: true
-    num_rotate: 50
     root: ./dataset
-    rotate_range: 180
     shift_range: 10
     type: rotate
   training:

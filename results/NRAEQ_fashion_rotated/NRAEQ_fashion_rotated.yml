@@ -12,18 +12,17 @@ data:
   training:
     batch_size: 50
     dataset: fashion
-    digit: 0
+    digit: 3
     download: true
     graph:
-      bs_nn: 3
+      bs_nn: 2
       include_center: true
-      num_nn: 5
+      num_nn: 10
       replace: false
       use_graph: true
-    num_rotate: 50
+    num_rotate: 100
     root: ./dataset
     rotate_range: 180
-    shift_range: 10
     type: rotate
 device: cuda:0
 exp_name: NRAEQ_fashion_rotated
@@ -60,4 +59,4 @@ model:
 optimizer:
   lr: 0.001
 training:
-  num_epochs: 1001
+  num_epochs: 2001

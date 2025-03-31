@@ -9,6 +9,8 @@ from models.modules import (
     FC_image
 )
 
+from models.cifar10_ae import CIFAR10AE
+
 def get_net(in_dim, out_dim, **kwargs):
     if kwargs["arch"] == "fc_vec":
         l_hidden = kwargs["l_hidden"]
@@ -62,7 +64,8 @@ def _get_model_instance(name):
         return {
             "ae": get_ae,
             "nrael": get_ae,
-            "nraeq": get_ae
+            "nraeq": get_ae,
+            "cifar10ae": lambda **kwargs: CIFAR10AE(**{k: v for k, v in kwargs.items() if k != "arch"})
         }[name]
     except:
         raise ("Model {} not available".format(name))

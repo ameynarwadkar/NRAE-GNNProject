@@ -1,0 +1,45 @@
+exp_name: NRAEL_cifar_shifted
+data:
+  training:
+    dataset: cifar10
+    root: ./dataset
+    type: shift
+    digit: 3
+    download: true
+    shift_range: 10
+    batch_size: 10
+    graph:
+      use_graph: true
+      num_nn: 5
+      bs_nn: 3
+      include_center: true
+      replace: false
+  test:
+    dataset: cifar10
+    root: ./dataset
+    type: shift
+    digit: 3
+    download: true
+    shift_range: 10
+    batch_size: 50
+model:
+  arch: nrael
+  encoder:
+      arch: fc_image
+      l_hidden: [512, 512, 512, ]
+      activation: ['relu', 'relu', 'relu', ]
+      out_activation: 'linear'
+  decoder:
+      arch: fc_image
+      l_hidden: [512, 512, 512, ]
+      activation: ['relu', 'relu', 'relu', ]
+      out_activation: 'sigmoid'
+  x_dim: 784
+  z_dim: 2
+  kernel: 
+    type: 'binary'
+    lambda: 10
+optimizer:
+  lr: 0.001
+training:
+  num_epochs: 1001

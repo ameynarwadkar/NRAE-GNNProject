@@ -1,0 +1,56 @@
+data:
+  test:
+    batch_size: 32
+    dataset: synthetic
+    noise_level: 0.0
+    num_data: 1000
+    split: test
+    type: twomoons
+  training:
+    batch_size: 16
+    dataset: synthetic
+    graph:
+      bs_nn: 2
+      include_center: true
+      num_nn: 2
+      replace: true
+    noise_level: 0.05
+    num_data: 30
+    split: training
+    type: twomoons
+device: cuda:0
+exp_name: AE_toy_denoising_twomoons
+logdir: results/AE_toy_denoising_twomoons
+model:
+  arch: ae
+  decoder:
+    activation:
+    - elu
+    - elu
+    - elu
+    arch: fc_vec
+    l_hidden:
+    - 512
+    - 512
+    - 512
+    out_activation: linear
+  encoder:
+    activation:
+    - elu
+    - elu
+    - elu
+    arch: fc_vec
+    l_hidden:
+    - 512
+    - 512
+    - 512
+    out_activation: linear
+  kernel:
+    lambda: 2
+    type: binary
+  x_dim: 2
+  z_dim: 1
+optimizer:
+  lr: 0.001
+training:
+  num_epochs: 200

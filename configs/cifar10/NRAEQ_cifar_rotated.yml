@@ -1,0 +1,40 @@
+exp_name: NRAEQ_cifar_rotated
+data:
+  training:
+    dataset: cifar10
+    root: ./dataset
+    type: rotate
+    download: true
+    num_rotate: 100
+    rotate_range: 180
+    digit: 3
+    batch_size: 50
+    graph:
+      num_nn: 10
+      bs_nn: 2
+      include_center: true
+      replace: false
+  test:
+    dataset: cifar10
+    root: ./dataset
+    type: rotate
+    digit: 0
+    download: true
+    num_rotate: 50
+    rotate_range: 180
+    shift_range: 10
+    batch_size: 50
+model:
+  arch: cifar10ae
+  latent_dim: 128
+  nrae_mode: true
+  approx_order: 2
+  kernel:
+    type: 'binary'
+    lambda: 10
+optimizer:
+  lr: 0.001
+training:
+  num_epochs: 1001
+device: cuda:0
+logdir: results/NRAEQ_cifar_rotated

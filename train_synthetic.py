@@ -9,6 +9,7 @@ import yaml
 from omegaconf import OmegaConf
 from loader import get_dataset, get_dataloader
 from models import get_model
+from PIL import Image  # For resizing frames
 
 def run(cfg):
     # Setup seeds
@@ -70,7 +71,7 @@ def run(cfg):
         if epoch > 0.8 * cfg['training']['num_epochs']:
             scheduler.step()
         
-        # Capture snapshot every 40 epochs or in early training (< 30 epochs)
+        # Capture snapshot every 40 epochs or during early training (< 30 epochs)
         if (epoch % 40 == 0) or (epoch < 30):
             image_array = model.synthetic_visualize(
                 epoch,
@@ -97,9 +98,37 @@ def run(cfg):
         list_figs += [graph_fig]*10
     list_figs += list_of_images
     list_figs += [list_of_images[-1]]*20
+
+    # --- Ensure all frames have the same shape ---
+    # Use the shape of the first frame as the target (e.g., (height, width, channels))
+    fixed_shape = list_figs[0].shape  # For example, (H, W, 3)
+    fixed_list_figs = []
+    # Use LANCZOS as the resampling filter (new Pillow versions use Image.Resampling)
+    resample_filter = Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS
+    for frame in list_figs:
+        # Ensure frame is a numpy array of type uint8
+        frame = np.array(frame, dtype=np.uint8)
+        # If frame is grayscale, convert to RGB
+        if frame.ndim == 2:
+            frame = np.stack([frame]*3, axis=-1)
+        # If channel number does not match, adjust:
+        if frame.shape[-1] != fixed_shape[-1]:
+            if frame.shape[-1] > fixed_shape[-1]:
+                frame = frame[..., :fixed_shape[-1]]
+            else:
+                # Repeat channels if there are fewer than expected
+                repeats = fixed_shape[-1] // frame.shape[-1]
+                frame = np.repeat(frame, repeats, axis=-1)
+        # Resize if the height or width is different from fixed_shape
+        if frame.shape[:2] != fixed_shape[:2]:
+            img_pil = Image.fromarray(frame)
+            img_pil = img_pil.resize((fixed_shape[1], fixed_shape[0]), resample=resample_filter)
+            frame = np.array(img_pil)
+        fixed_list_figs.append(frame)
+    
     imageio.mimsave(
         os.path.join(cfg['logdir'], f'{model_name}_TRAINING.gif'), 
-        list_figs, duration=0.2)
+        fixed_list_figs, duration=0.2)
     
 def parse_arg_type(val):
     if val.isnumeric():

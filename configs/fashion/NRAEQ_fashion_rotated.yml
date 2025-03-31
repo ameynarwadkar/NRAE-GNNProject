@@ -1,20 +1,32 @@
-exp_name: AE_mnist_rotated
+exp_name: NRAEQ_fashion_rotated
 data:
   training:
-    dataset: mnist
+    dataset: fashion
     root: './dataset'
     type: rotate
+    digit: 3
+    download: true
     num_rotate: 100
     rotate_range: 180
-    digit: 3
     batch_size: 50
-    graph: 
-          include_center: True
-          replace: False
-          num_nn: 10
-          bs_nn: 2
+    graph:
+      use_graph: true
+      num_nn: 10
+      bs_nn: 2
+      include_center: true
+      replace: false
+  test:
+    dataset: fashion
+    root: ./dataset
+    type: rotate
+    digit: 0
+    download: true
+    num_rotate: 50
+    rotate_range: 180
+    shift_range: 10
+    batch_size: 50
 model:
-  arch: ae
+  arch: nraeq
   encoder:
       arch: fc_image
       l_hidden: [512, 512, 512, ]
@@ -26,7 +38,10 @@ model:
       activation: ['relu', 'relu', 'relu', ]
       out_activation: 'sigmoid'
   x_dim: 784
-  z_dim: 1
+  z_dim: 2
+  kernel: 
+    type: 'binary'
+    lambda: 10
 optimizer:
   lr: 0.001
 training:

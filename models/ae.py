@@ -98,7 +98,7 @@ class AE(nn.Module):
         vis_data = torch.stack(vis_data, dim=0)
         
         encoded = self.encoder(vis_data.to(device))
-        _, index_order = torch.sort(encoded.view(-1), 0)
+        _, index_order = torch.sort(encoded[:, 0], dim=0)
         ascending_ordered_z = encoded[index_order]
         recon_data = self.decoder(ascending_ordered_z).detach().cpu().repeat(1,3,1,1)
         total_vis_num = recon_data.size(0)

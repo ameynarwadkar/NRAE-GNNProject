@@ -1,4 +1,4 @@
-exp_name: NRAEQ_fashion_shifted
+exp_name: NRAEL_fashion_shifted
 data:
   training:
     dataset: fashion
@@ -17,7 +17,7 @@ data:
   test:
     dataset: fashion
     root: ./dataset
-    type: rotate
+    type: shift
     digit: 0
     download: true
     shift_range: 10

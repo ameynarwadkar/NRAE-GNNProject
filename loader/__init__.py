@@ -3,6 +3,7 @@ from torch.utils import data
 from loader.synthetic_dataset import SyntheticData
 from loader.MNIST_dataset import RotatedShiftedMNIST
 from loader.FashionMNIST_dataset import RotatedShiftedFashionMNIST
+from loader.CIFAR10_dataset import RotatedShiftedCIFAR10
 
 def get_dataloader(data_dict, **kwargs):
     dataset = get_dataset(data_dict)
@@ -22,4 +23,6 @@ def get_dataset(data_dict):
         dataset = RotatedShiftedFashionMNIST(**data_dict)    
     elif name == 'mnist':
         dataset = RotatedShiftedMNIST(**data_dict)
+    elif name == 'cifar10':
+        dataset = RotatedShiftedCIFAR10(**data_dict)    
     return dataset

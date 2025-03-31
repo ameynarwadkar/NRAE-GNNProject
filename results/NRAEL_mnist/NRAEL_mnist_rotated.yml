@@ -1,0 +1,41 @@
+data:
+  test:
+    batch_size: 50
+    dataset: mnist
+    download: true
+    root: ./dataset
+  training:
+    batch_size: 50
+    dataset: mnist
+    download: true
+    graph: false
+    root: ./dataset
+device: cuda:0
+exp_name: NRAEL_mnist
+logdir: results/NRAEL_mnist
+model:
+  arch: nrael
+  decoder:
+    activation:
+    - relu
+    - relu
+    arch: fc_vec
+    l_hidden:
+    - 256
+    - 512
+    out_activation: sigmoid
+  encoder:
+    activation:
+    - relu
+    - relu
+    arch: fc_vec
+    l_hidden:
+    - 512
+    - 256
+    out_activation: linear
+  x_dim: 784
+  z_dim: 2
+optimizer:
+  lr: 0.001
+training:
+  num_epochs: 100

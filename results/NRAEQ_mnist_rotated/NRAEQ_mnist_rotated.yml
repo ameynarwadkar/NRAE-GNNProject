@@ -1,12 +1,21 @@
 data:
+  test:
+    batch_size: 50
+    dataset: mnist
+    digit: 5
+    download: true
+    num_rotate: 100
+    root: ./dataset
+    rotate_range: 180
+    type: rotate
   training:
     batch_size: 50
     dataset: mnist
-    digit: 3
+    digit: 5
     graph:
       bs_nn: 2
       include_center: true
-      num_nn: 15
+      num_nn: 20
       replace: false
     num_rotate: 100
     root: ./dataset
@@ -43,7 +52,7 @@ model:
     lambda: 10
     type: binary
   x_dim: 784
-  z_dim: 1
+  z_dim: 2
 optimizer:
   lr: 0.001
 training:

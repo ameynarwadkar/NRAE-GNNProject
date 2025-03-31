@@ -1,0 +1,59 @@
+data:
+  test:
+    batch_size: 50
+    dataset: fashion
+    digit: 0
+    download: true
+    root: ./dataset
+    shift_range: 10
+    type: rotate
+  training:
+    batch_size: 10
+    dataset: fashion
+    digit: 3
+    download: true
+    graph:
+      bs_nn: 3
+      include_center: true
+      num_nn: 5
+      replace: false
+      use_graph: true
+    root: ./dataset
+    shift_range: 10
+    type: shift
+device: cuda:0
+exp_name: AE_fashion_shifted
+logdir: results/AE_fashion_shifted
+model:
+  arch: ae
+  decoder:
+    activation:
+    - relu
+    - relu
+    - relu
+    arch: fc_image
+    l_hidden:
+    - 512
+    - 512
+    - 512
+    out_activation: sigmoid
+  encoder:
+    activation:
+    - relu
+    - relu
+    - relu
+    arch: fc_image
+    l_hidden:
+    - 512
+    - 512
+    - 512
+    out_activation: linear
+  kernel:
+    lambda: 10
+    type: binary
+  x_dim: 784
+  z_dim: 2
+optimizer:
+  lr: 0.001
+training:
+  num_epochs: 1001
