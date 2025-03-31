@@ -1,87 +1,49 @@
-# Neighborhood Reconstructing Autoencoders
-The official repository for \<Neighborhood Reconstructing Autoencoders\> (Lee, Kwon, and Park, NeurIPS 2021).
+# Neighborhood Reconstructing Autoencoders for Manifold Learning – Experimental Study
 
-> This paper proposes Neighborhood Reconstructing Autoencoders (NRAE), which is a **graph**-based autoencoder that explicitly accounts for the **local connectivity and geometry** of the data, and consequently learns a **more accurate data manifold and representation**.
+This repository contains the implementation and experimental evaluation of Neighborhood Reconstructing Autoencoders (NRAE) for manifold learning. Our approach extends traditional autoencoder frameworks by incorporating a neighborhood reconstruction loss that explicitly enforces local geometric consistency, resulting in improved reconstruction fidelity and more robust latent space representations.
 
-- *[Paper](https://papers.nips.cc/paper/2021/hash/05311655a15b75fab86956663e1819cd-Abstract.html)*  
-- *[15-mins video](https://www.youtube.com/watch?v=TlmEZY98ElU)*  
-- *[Slides](https://drive.google.com/file/d/1zpr_ippcoU8kdsOSQJmrphVKOnEYLFzk/view?usp=sharing)*  
-- *[Poster](https://drive.google.com/file/d/1_tm-jWh5EzHkxBECtlgaifVR-aZGXFpH/view?usp=sharing)*  
-- *[OpenReview](https://openreview.net/forum?id=_kaH2bAI3O&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DNeurIPS.cc%2F2021%2FConference%2FAuthors%23your-submissions))*  
+## Overview
 
-## Preview (synthetic data)
-<center>
-<div class="imgCollage">
-<span style="width: 31.8%"><img src="./results/AE_toy_denoising/AE_training.gif" width="250 height="190"/></span>
-<span style="width: 31.8%"><img src="./results/NRAEL_toy_denoising/NRAEL_training.gif" width="250 height="190"/> </span>
-<span style="width: 31.8%"><img src="./results/NRAEQ_toy_denoising/NRAEQ_training.gif" width="250 height="190"/> </span>
-</div>
-  <I>Figure 1: De-noising property of the NRAE (Left: Vanilla AE, Middle: NRAE-L, Right: NRAE-Q). </I>
-</center>
+In this project, we compare three model variants:
+- **Standard Autoencoder (AE)**
+- **NRAEL**: Neighborhood Reconstructing Autoencoder using a first-order (linear) approximation.
+- **NRAEQ**: Neighborhood Reconstructing Autoencoder using a second-order (quadratic) approximation.
 
-<center>
-<div class="imgCollage">
-<span style="width: 31.8%"><img src="./results/AE_toy_geometry_preserving/AE_training.gif" width="250 height="190"/></span>
-<span style="width: 31.8%"><img src="./results/NRAEL_toy_geometry_preserving/NRAEL_training.gif" width="250 height="190"/> </span>
-<span style="width: 31.8%"><img src="./results/NRAEQ_toy_geometry_preserving/NRAEQ_training.gif" width="250 height="190"/> </span>
-</div>
-  <I>Figure 2: Correct local connectivity learned by the NRAE (Left: Vanilla AE, Middle: NRAE-L, Right: NRAE-Q).</I>
-</center>
+Our experiments span several datasets, demonstrating the benefits of neighborhood-based reconstruction:
+- **CIFAR10:** Evaluating rotational invariance and denoising performance.
+- **FashionMNIST:** Assessing rotational variations and geometric preservation.
+- **MNIST:** Analyzing reconstruction fidelity and latent space regularity.
+- **Synthetic Datasets:** Including Sine Curve for denoising and Swiss Roll for geometry preservation.
 
-## Preview (rotated/shifted MNIST)
-<center>
-<div class="imgCollage">
-<span style="width: 100%"><img src="./results/AE_mnist_rotated/AE.gif" width="750 height="190"/></span>
-<span style="width: 100%"><img src="./results/NRAEL_mnist_rotated/NRAE.gif" width="750 height="190"/> </span>
-<span style="width: 100%"><img src="./results/NRAEQ_mnist_rotated/NRAE.gif" width="750 height="190"/> </span>
-</div>
-  <I>Figure 3: Generated sequences of rotated images by travelling the 1d latent spaces (Top: Vanilla AE, Middle: NRAE-L, Bottom: NRAE-Q). </I>
-</center>
+## Experimental Highlights
 
-<center>
-<div class="imgCollage">
-<span style="width: 100%"><img src="./results/AE_mnist_shifted/AE.gif" width="750 height="190"/></span>
-<span style="width: 100%"><img src="./results/NRAEL_mnist_shifted/NRAE.gif" width="750 height="190"/> </span>
-<span style="width: 100%"><img src="./results/NRAEQ_mnist_shifted/NRAE.gif" width="750 height="190"/> </span>
-</div>
-  <I>Figure 3: Generated sequences of shifted images by travelling the 1d latent spaces (Top: Vanilla AE, Middle: NRAE-L, Bottom: NRAE-Q). </I>
-</center>
+- **Rotational Invariance:**  
+  On CIFAR10 and FashionMNIST, NRAEL and NRAEQ capture rotational transformations far more effectively than standard VAE models by maintaining local geometric continuity.
+
+- **Denoising and Geometry Preservation:**  
+  Synthetic experiments on a noisy Sine Curve and the Swiss Roll show that the neighborhood reconstruction loss not only enhances denoising capabilities but also preserves the intrinsic manifold structure. In particular, the second-order NRAEQ model yields smoother latent space representations, as evidenced by scalar curvature analyses.
+
+- **Latent Space Regularity:**  
+  Experiments with MNIST, including scalar curvature heatmaps, indicate that increasing the number of nearest neighbors (num_nn) in the reconstruction process leads to a more continuous and coherent latent space.
+
+Refer to the `results/` directory for visual comparisons and detailed figures.
+
+## Repository Structure
+
+- `configs/`: Configuration files for various experiments.
+- `models/`: Implementation of autoencoder architectures and neighborhood reconstruction functions.
+- `train_*.py`: Training scripts for CIFAR10, FashionMNIST, MNIST, and synthetic datasets.
+- `results/`: Visualizations and comparative analyses.
+- `GNN_Project.pdf`: The project report detailing methodology, experiments, and conclusions.
 
 ## Environment
 
-The project is developed under a standard PyTorch environment.
-- python 3.8.8
-- numpy 
-- matplotlib 
-- imageio 
-- argparse 
-- yaml 
-- omegaconf 
-- torch 1.8.0
-- CUDA 11.1
+The project is developed using PyTorch under the following conditions:
+- Python 3.8+
+- PyTorch 1.8+
+- CUDA (if available)
+- Additional Python packages: numpy, matplotlib, imageio, argparse, yaml, omegaconf, etc.
 
-## Running 
-```
-python train_{X}.py --config configs/{A}_{B}_{C}.yml --device 0
-```
-- `X` is either `synthetic` or `MNIST`
-- `A` is either `AE`, `NRAEL`, or `NRAEQ`
-- `B` is either `toy` or `mnist`
-- If `B` is `toy`, then `C` is either `denoising` or `geometry_preserving`. Elseif `B` is `mnist`, then `C` is either `rotated` or `shifted`.
+## Running the Code
 
-### Playing with the code
-- The most important parameters requiring tuning include: i) the number of nearest neighbors for graph construction `num_nn` and ii) kernel parameter `lambda` (you can find these parameters in `configs/NRAEL_toy_denoising.yml` for example). 
-- We empirically observe that setting as `include_center=True` (when defining data loader) has performance advantange. 
-- You can add a new type of 2d synthetic dataset in `loader.synthetic_dataset.SyntheticData.get_data` (currently, we have `sincurve` and `swiss_roll`).
-
-## Citation
-If you found this library useful in your research, please consider citing:
-```
-@article{lee2021neighborhood,
-  title={Neighborhood Reconstructing Autoencoders},
-  author={Lee, Yonghyeon and Kwon, Hyeokjun and Park, Frank},
-  journal={Advances in Neural Information Processing Systems},
-  volume={34},
-  year={2021}
-}
-```
+To train a model on a specific dataset, run the corresponding training script. For example:
